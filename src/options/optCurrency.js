@@ -2,103 +2,64 @@ const request = require('request');
 const chalk = require('chalk');
 const emoji = require('node-emoji');
 
-const fixedAPIPrefix = 'http://api.fixer.io/latest?base=';
+const emojis = {
+  USD: 'flag-us',
+  JPY: 'flag-jp',
+  BGN: 'flag-bg',
+  CZK: 'flag-cz',
+  DKK: 'flag-dk',
+  GBP: 'flag-gb',
+  HUF: 'flag-hu',
+  PLN: 'flag-pl',
+  RON: 'flag-ro',
+  SEK: 'flag-se',
+  CHF: 'flag-ch',
+  NOK: 'flag-no',
+  HRK: 'flag-hr',
+  RUB: 'flag-ru',
+  TRY: 'flag-tr',
+  AUD: 'flag-au',
+  BRL: 'flag-br',
+  CAD: 'flag-ca',
+  CNY: 'flag-cn',
+  HKD: 'flag-hk',
+  IDR: 'flag-id',
+  ILS: 'flag-il',
+  INR: 'flag-in',
+  KRW: 'flag-kr',
+  MXN: 'flag-mx',
+  MYR: 'flag-my',
+  NZD: 'flag-nz',
+  PHP: 'flag-ph',
+  SGD: 'flag-sg',
+  THB: 'flag-th',
+  ZAR: 'flag-za',
+  EUR: 'euro',
+};
 
 function getCountryIcon(countryInitial) {
-  switch (countryInitial) {
-    case 'USD':
-      return emoji.get('flag-us');
-    case 'JPY':
-      return emoji.get('flag-jp');
-    case 'BGN':
-      return emoji.get('flag-bg');
-    case 'CZK':
-      return emoji.get('flag-cz');
-    case 'DKK':
-      return emoji.get('flag-dk');
-    case 'GBP':
-      return emoji.get('flag-gb');
-    case 'HUF':
-      return emoji.get('flag-hu');
-    case 'PLN':
-      return emoji.get('flag-pl');
-    case 'RON':
-      return emoji.get('flag-ro');
-    case 'SEK':
-      return emoji.get('flag-se');
-    case 'CHF':
-      return emoji.get('flag-ch');
-    case 'NOK':
-      return emoji.get('flag-no');
-    case 'HRK':
-      return emoji.get('flag-hr');
-    case 'RUB':
-      return emoji.get('flag-ru');
-    case 'TRY':
-      return emoji.get('flag-tr');
-    case 'AUD':
-      return emoji.get('flag-au');
-    case 'BRL':
-      return emoji.get('flag-br');
-    case 'CAD':
-      return emoji.get('flag-ca');
-    case 'CNY':
-      return emoji.get('flag-cn');
-    case 'HKD':
-      return emoji.get('flag-hk');
-    case 'IDR':
-      return emoji.get('flag-id');
-    case 'ILS':
-      return emoji.get('flag-il');
-    case 'INR':
-      return emoji.get('flag-in');
-    case 'KRW':
-      return emoji.get('flag-kr');
-    case 'MXN':
-      return emoji.get('flag-mx');
-    case 'MYR':
-      return emoji.get('flag-my');
-    case 'NZD':
-      return emoji.get('flag-nz');
-    case 'PHP':
-      return emoji.get('flag-ph');
-    case 'SGD':
-      return emoji.get('flag-sg');
-    case 'THB':
-      return emoji.get('flag-th');
-    case 'ZAR':
-      return emoji.get('flag-za');
-    case 'ISK':
-      return emoji.get('flag-is');
-    case 'EUR':
-      return emoji.get('euro');
-    default:
-      return '';
-  }
+  return emoji.get(emojis[countryInitial]);
 }
 
 function formatRates(rates) {
-  const ratesArray = [];
-  Object.keys(rates).forEach((rate) => {
-    ratesArray.push(`${getCountryIcon(rate)}  ${rate} ${chalk.green(rates[rate])}\n-------------\n`);
-  });
-  return ratesArray.join('');
+  return Object
+    .keys(rates)
+    .map(rate => `${getCountryIcon(rate)}  ${rate} ${chalk.green(rates[rate])}\n-------------\n`)
+    .join('');
 }
 
-function optCurrency(command) {
-  let apiURL = fixedAPIPrefix;
-  if ('base' in command) {
-    apiURL += `${command.base}&`;
-  } else {
-    apiURL += 'USD&';
+function optCurrency({ base = 'USD', symbols } = {}) {
+  let apiURL = 'http://api.fixer.io/latest?base=';
+
+  apiURL += `${base}&`;
+
+  if (symbols) {
+    apiURL += `symbols=${symbols}`;
   }
 
-  if ('symbols' in command) {
-    apiURL += `symbols=${command.symbols}`;
-  }
-
-  request(apiURL, (error, response, body) => {
+  request(apiURL, (error, response, body) => { // eslint-disable-line consistent-return
     let apiResponse;
+
     try {
       apiResponse = JSON.parse(body);
     } catch (parseError) {
@@ -110,10 +71,9 @@ function optCurrency(command) {
       console.log(chalk.red('It was not possible to retrieve what you want'));
       return false;
     }
-    return console.log(`
-${chalk.yellow('Base currency')} ${getCountryIcon(apiResponse.base)}  ${chalk.cyan(apiResponse.base)}
--------------\nCurrency Rates\n
-${formatRates(apiResponse.rates)}`);
+
+    console.log(`\n${chalk.yellow('Base currency')} ${getCountryIcon(apiResponse.base)}  ${chalk.cyan(apiResponse.base)}`);
+    console.log(`\nCurrency Rates\n\n${formatRates(apiResponse.rates)}`);
   });
 }
 
